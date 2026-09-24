@@ -202,6 +202,32 @@
     apply();
   }
 
+  /* ---------- Equipe no toque: a fileira mais perto do centro da tela fica em destaque ---------- */
+  const tmCards = $$(".team-grid .tm");
+  if (tmCards.length && win.matchMedia("(hover: none)").matches) {
+    let ticking = false;
+    const focus = () => {
+      ticking = false;
+      // linha de foco um pouco abaixo do meio: header e barra de filtro ocupam o topo
+      const line = win.innerHeight * .55;
+      let best = null, bestD = Infinity;
+      tmCards.forEach(c => {
+        const r = c.getBoundingClientRect();
+        if (!r.height || r.bottom < 0 || r.top > win.innerHeight) return;
+        const d = Math.abs(r.top + r.height / 2 - line);
+        if (d < bestD && d < r.height * .75) { best = r; bestD = d; }
+      });
+      // realça todos os cartões da mesma fileira (grade de 2 colunas)
+      tmCards.forEach(c => c.classList.toggle("is-focus", !!best && Math.abs(c.getBoundingClientRect().top - best.top) < 2));
+    };
+    const req = () => { if (!ticking) { ticking = true; requestAnimationFrame(focus); } };
+    win.addEventListener("scroll", req, { passive: true });
+    win.addEventListener("resize", req);
+    if (teamFilter) teamFilter.addEventListener("input", () => setTimeout(req, 150));
+    if (teamFilter) teamFilter.addEventListener("click", () => setTimeout(req, 50));
+    req();
+  }
+
   /* ---------- Formulários (validação + envio sem back-end via mailto / Formspree) ---------- */
   $$("form[data-form]").forEach(form => {
     const status = $(".form__status", form);
